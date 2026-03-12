@@ -1,17 +1,21 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Drink Stock Market</title>
+  <title>Belgian Drink Exchange - Live Market</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+  <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 40px;">
+    <h1>Live Koersen</h1>
+    <div id="qr-container" style="background: white; padding: 10px; border-radius: 8px;">
+      <img id="qr-code" src="" alt="QR Code naar deze pagina" width="100" height="100">
+      <p style="color: black; margin: 5px 0 0 0; font-size: 0.7em; font-weight: bold;">Scan om mee te kijken!</p>
+    </div>
+  </div>
+  
+  <div id="terminals-container" class="grid-container"></div>
 
-<h1>Drink Exchange</h1>
-
-<div id="prices"></div>
-
-<button onclick="orderDrink('beer')">Buy Beer</button>
-<button onclick="orderDrink('wine')">Buy Wine</button>
-
-<script src="app.js"></script>
+  <script src="viewer.js"></script>
 </body>
 </html>

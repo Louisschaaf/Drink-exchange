@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Kassa - Drink Exchange</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="login-screen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #121212; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+    <h2>Tapper Login</h2>
+    <input type="password" id="pin-input" placeholder="Voer PIN in" style="font-size: 2em; padding: 10px; text-align: center; width: 200px; margin-bottom: 20px;">
+    <button onclick="loginTapper()" style="background-color: #3498db; padding: 15px 30px; font-size: 1.2em;">Ontgrendel Kassa</button>
+  </div>
+
+  <h1>Kassa Systeem</h1>
+  
+  <div class="tapper-layout">
+    
+    <div class="pos-grid">
+      <button class="pos-btn" onclick="openModal('water', '💧')">💧<br>Water</button>
+      <button class="pos-btn" onclick="openModal('frisdrank', '🥤')">🥤<br>Frisdrank</button>
+      <button class="pos-btn" onclick="openModal('pintje', '🍺')">🍺<br>Pintje</button>
+      <button class="pos-btn" onclick="openModal('kriek', '🍒')">🍒<br>Kriek</button>
+      <button class="pos-btn" onclick="openModal('witte wijn', '🥂')">🥂<br>Witte Wijn</button>
+      <button class="pos-btn" onclick="openModal('kasteelbier rouge', '🍷')">🍷<br>Kasteelbier</button>
+      <button class="pos-btn" onclick="openModal('duvel', '🍻')">🍻<br>Duvel</button>
+      <button class="pos-btn" onclick="openModal('trippel karmeliet', '🏺')">🏺<br>Karmeliet</button>
+    </div>
+
+    <div class="price-sidebar">
+      <h2>Huidige Prijzen</h2>
+      <div id="live-price-list">
+        Laden...
+      </div>
+    </div>
+
+  </div>
+
+  <div id="quantity-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <h2 id="modal-title">Hoeveel?</h2>
+      <div class="quantity-controls">
+        <button onclick="changeQuantity(-1)" class="qty-btn">-</button>
+        <span id="qty-display" style="font-size: 2em; margin: 0 20px;">1</span>
+        <button onclick="changeQuantity(1)" class="qty-btn">+</button>
+      </div>
+      <br>
+      <h3 id="modal-total" style="color: #00C851; margin: 15px 0;">Totaal: €0.00</h3>
+      <button onclick="confirmOrder()" style="background-color: #00C851; padding: 20px 40px; font-size: 1.5em; width: 100%;">Afrekenen</button>
+      <button onclick="closeModal()" style="background-color: #ff4444; width: 100%; margin-top: 10px;">Annuleer</button>
+    </div>
+  </div>
+
+  <script src="tapper.js"></script>
+</body>
+</html>

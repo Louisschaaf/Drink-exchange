@@ -1,0 +1,145 @@
+body {
+  background-color: #121212;
+  color: #00ff00;
+  font-family: 'Courier New', Courier, monospace;
+  text-align: center;
+  padding: 20px;
+}
+
+h1 {
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 40px;
+}
+
+/* The Grid Layout */
+.grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Individual Terminal Styling */
+.terminal {
+  background-color: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+}
+
+.terminal h2 {
+  color: #fff;
+  margin: 0 0 10px 0;
+  font-size: 1.2em;
+  text-transform: uppercase;
+}
+
+.price-display {
+  font-size: 1.8em;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+/* Dynamic Price Colors */
+.price-up { color: #00C851; }   /* Green */
+.price-down { color: #ff4444; } /* Red */
+.price-flat { color: #ffffff; } /* White */
+
+button {
+  background-color: #333;
+  color: white;
+  border: 1px solid #555;
+  padding: 12px;
+  margin-top: 15px;
+  font-size: 1em;
+  font-weight: bold;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+}
+
+button:hover {
+  background-color: #00C851; /* Green hover effect */
+  border-color: #00C851;
+  color: #000;
+}
+
+/* Kassa Grid */
+.pos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.pos-btn {
+  height: 120px;
+  font-size: 1.2em;
+  background-color: #1a1a1a;
+}
+
+/* Modal (Pop-up) Styling */
+.modal {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background-color: rgba(0,0,0,0.8);
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: #1e1e1e;
+  padding: 30px;
+  border-radius: 10px;
+  border: 2px solid #333;
+  text-align: center;
+  min-width: 300px;
+}
+
+.qty-btn {
+  font-size: 2em;
+  padding: 10px 25px;
+  background-color: #333;
+}
+
+/* Layout voor de tapper pagina */
+.tapper-layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+  align-items: flex-start;
+}
+
+/* De linker kant (knoppen) neemt de meeste ruimte in */
+.tapper-layout .pos-grid {
+  flex: 2;
+  min-width: 300px;
+}
+
+/* De rechter kant (prijslijst) */
+.price-sidebar {
+  flex: 1;
+  min-width: 250px;
+  background-color: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+.price-sidebar h2 {
+  margin-top: 0;
+  border-bottom: 2px solid #555;
+  padding-bottom: 10px;
+}
