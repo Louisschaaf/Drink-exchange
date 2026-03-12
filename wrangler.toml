@@ -1,0 +1,6 @@
+name = "drink-exchange" # Zorg dat dit overeenkomt met je Cloudflare Pages projectnaam
+pages_build_output_dir = "public"
+
+[[kv_namespaces]]
+binding = "BAR_KV"
+id = "44fb2de493f642b085a920d0bf89d7c7"
