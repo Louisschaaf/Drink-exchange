@@ -143,3 +143,16 @@ button:hover {
   border-bottom: 2px solid #555;
   padding-bottom: 10px;
 }
+
+/* Voorkom pull-to-refresh en ongewenst inzoomen op de hele pagina */
+body {
+  touch-action: pan-y; /* Alleen verticaal scrollen is toegestaan */
+  overscroll-behavior-y: none; /* Blokkeert de "trek naar beneden om te vernieuwen" actie op gsm's */
+}
+
+/* Maak alle knoppen hufterproof voor snel tikken */
+button, .pos-btn, .qty-btn {
+  touch-action: manipulation; /* Voorkomt de 'double-tap-to-zoom' vertraging van 300ms */
+  user-select: none; /* Voorkomt dat tekst geselecteerd wordt bij wild geklik */
+  -webkit-user-select: none; /* Speciaal voor iPhones en iPads */
+}
