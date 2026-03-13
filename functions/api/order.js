@@ -1,51 +1,43 @@
 export async function onRequestPost(context) {
   const body = await context.request.json();
-  
-  // --- BEVEILIGING ---
-  const SECRET_PIN = "5555"; // Zorg dat dit overeenkomt met je PIN!
+  const SECRET_PIN = "5555"; 
   if (body.pin !== SECRET_PIN) {
-    return new Response(JSON.stringify({ error: "Toegang geweigerd: Foute PIN!" }), {
-      status: 403, headers: { "content-type": "application/json" }
-    });
+    return new Response(JSON.stringify({ error: "Foute PIN!" }), { status: 403 });
   }
 
-  const purchasedDrink = body.drink;
-  const quantity = body.quantity || 1; 
-
-  // Koppel aan de juiste database versie (market_v3)
   let data = JSON.parse(await context.env.BAR_KV.get("market_v3") || "{}");
+  if (!data.prices) return new Response(JSON.stringify({ error: "Initializing..." }), { status: 400 });
+  if (data.drinksSold === undefined) data.drinksSold = 0;
 
-  if (!data.prices) {
-    return new Response(JSON.stringify({ error: "Market initializing..." }), {
-      status: 400, headers: { "content-type": "application/json" }
-    });
-  }
+  const quantity = body.quantity || 1; 
+  data.drinksSold += quantity; // Tel de drankjes op!
 
-  // Hoe hard de prijzen stijgen/dalen per bestelling
-  const PRICE_BUMP = 1.08; 
-  const PRICE_DROP = 0.98;  
+  const CRASH_LIMIT = 50; // Na hoeveel drankjes crasht de boel?
 
-  for (let i = 0; i < quantity; i++) {
+  if (data.drinksSold >= CRASH_LIMIT) {
+    // 🔥 BEURSCRASH 🔥
     for (const drinkName in data.prices) {
-      
-      // BEREKEN DE MAX EN MIN (50% SCHOMMELING) VANAF DE BASISPRIJS
       const basePrice = data.prices[drinkName].base;
-      const maxPrice = basePrice * 1.50; // Maximaal +50%
-      const minPrice = basePrice * 0.50; // Minimaal -50%
+      data.prices[drinkName].price = basePrice * 0.50; // Alles naar de absolute bodemprijs!
+    }
+    data.drinksSold = 0; // Reset de teller voor de volgende crash
+  } else {
+    // Normale berekening
+    const PRICE_BUMP = 1.08; 
+    const PRICE_DROP = 0.98;  
 
-      if (drinkName === purchasedDrink) {
-        data.prices[drinkName].price *= PRICE_BUMP;
-        
-        // Zorg dat de prijs niet boven het berekende maximum (bijv. €3.00 of €6.00) gaat
-        if (data.prices[drinkName].price > maxPrice) {
-          data.prices[drinkName].price = maxPrice;
-        }
-      } else {
-        data.prices[drinkName].price *= PRICE_DROP;
-        
-        // Zorg dat de prijs niet onder het berekende minimum (bijv. €1.00 of €2.00) gaat
-        if (data.prices[drinkName].price < minPrice) {
-          data.prices[drinkName].price = minPrice;
+    for (let i = 0; i < quantity; i++) {
+      for (const drinkName in data.prices) {
+        const basePrice = data.prices[drinkName].base;
+        const maxPrice = basePrice * 1.50; 
+        const minPrice = basePrice * 0.50; 
+
+        if (drinkName === body.drink) {
+          data.prices[drinkName].price *= PRICE_BUMP;
+          if (data.prices[drinkName].price > maxPrice) data.prices[drinkName].price = maxPrice;
+        } else {
+          data.prices[drinkName].price *= PRICE_DROP;
+          if (data.prices[drinkName].price < minPrice) data.prices[drinkName].price = minPrice;
         }
       }
     }
@@ -54,7 +46,7 @@ export async function onRequestPost(context) {
   data.lastUpdate = Date.now();
   await context.env.BAR_KV.put("market_v3", JSON.stringify(data));
 
-  return new Response(JSON.stringify(data.prices), {
+  return new Response(JSON.stringify({ prices: data.prices, drinksSold: data.drinksSold }), {
     headers: { "content-type": "application/json" }
   });
 }

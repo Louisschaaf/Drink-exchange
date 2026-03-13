@@ -156,3 +156,52 @@ button, .pos-btn, .qty-btn {
   user-select: none; /* Voorkomt dat tekst geselecteerd wordt bij wild geklik */
   -webkit-user-select: none; /* Speciaal voor iPhones en iPads */
 }
+
+/* Styling voor de beurscrash balk */
+.crash-container {
+  width: 90%;
+  max-width: 1000px;
+  margin: 20px auto;
+  text-align: center;
+  background: #1e1e1e;
+  padding: 15px;
+  border-radius: 10px;
+  border: 2px solid #333;
+}
+
+#crash-title {
+  margin: 0 0 10px 0;
+  font-size: 1.5em;
+  color: #ffcc00; /* Goud-geel */
+}
+
+.progress-bg {
+  width: 100%;
+  height: 30px;
+  background: #333;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%; /* Begint op 0 */
+  background: linear-gradient(90deg, #ffcc00, #ff4444);
+  transition: width 0.5s ease-out;
+}
+
+/* Animatie voor als hij bijna crasht (danger zone) */
+@keyframes siren {
+  0% { background-color: #ff4444; box-shadow: 0 0 20px #ff4444; }
+  50% { background-color: #cc0000; box-shadow: 0 0 5px #cc0000; }
+  100% { background-color: #ff4444; box-shadow: 0 0 20px #ff4444; }
+}
+.danger-zone .progress-fill {
+  background: #ff4444 !important;
+  animation: siren 0.5s infinite;
+}
+.danger-zone #crash-title {
+  color: #ff4444;
+  animation: siren 0.5s infinite;
+}

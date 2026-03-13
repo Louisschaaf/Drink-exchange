@@ -58,9 +58,30 @@ function createTerminal(drinkName, initialPrice) {
   });
 }
 
-async function loadPrices() {
-  const res = await fetch(API + "/prices");
+async function fetchPrices() {
+  const res = await fetch("/api/prices");
   const data = await res.json();
+  
+  const prices = data.prices;
+  const sold = data.drinksSold; // Nieuw!
+  
+  // --- Update Progress Bar ---
+  const crashLimit = 50;
+  const percentage = (sold / crashLimit) * 100;
+  
+  const bar = document.getElementById('crash-bar');
+  const container = document.querySelector('.crash-container');
+  const title = document.getElementById('crash-title');
+  
+  bar.style.width = percentage + '%';
+
+  if (sold >= 40) {
+    container.classList.add('danger-zone');
+    title.innerText = "🚨 CRASH IMMINENT! 🚨";
+  } else {
+    container.classList.remove('danger-zone');
+    title.innerText = "Beurscrash in aantocht... 📉";
+  }
 
   // Update time tracker
   const now = new Date();

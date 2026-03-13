@@ -61,7 +61,8 @@ let currentPrices = {};
 async function fetchLivePrices() {
   try {
     const res = await fetch("/api/prices");
-    currentPrices = await res.json();
+    const data = await res.json();
+    currentPrices = data.prices; // Update onze globale prijzen
     
     // Bouw de HTML voor de zijbalk
     let listHTML = "";
