@@ -58,7 +58,7 @@ function createTerminal(drinkName, initialPrice) {
   });
 }
 
-async function fetchPrices() {
+async function loadPrices() {
   const res = await fetch("/api/prices");
   const data = await res.json();
   
