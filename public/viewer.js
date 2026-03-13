@@ -88,8 +88,8 @@ async function loadPrices() {
   timeLabels.push(now.toLocaleTimeString());
   if (timeLabels.length > 20) timeLabels.shift();
 
-  for (const drink in data) {
-    const currentPrice = data[drink].price;
+  for (const drink in prices) {
+    const currentPrice = prices[drink].price;
 
     // 1. If we haven't seen this drink yet, set it up!
     if (!chartData[drink]) {
