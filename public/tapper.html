@@ -14,6 +14,71 @@
 
   <h1>Kassa Systeem</h1>
   
+  <button id="config-toggle" class="config-toggle" onclick="toggleConfigPanel()">⚙️ Config</button>
+
+  <div id="config-overlay" class="config-overlay" onclick="closeConfigPanel(event)">
+    <div id="config-panel" class="config-panel">
+      <div class="config-header">
+        <h2>Prijsautomatisme Instellingen</h2>
+        <button class="config-close" onclick="toggleConfigPanel(false)">✕</button>
+      </div>
+
+      <div class="config-layout">
+        <div class="config-main">
+          <label style="display: block; margin-bottom: 10px;">
+        <strong>Standaardprijs Water (€)</strong>
+        <input type="number" id="config-base-water" step="0.10" min="0" style="width: 100%; padding: 8px; margin-top: 5px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 4px;">
+      </label>
+      
+      <label style="display: block; margin-bottom: 10px;">
+        <strong>Standaardprijs Alcohol (€)</strong>
+        <input type="number" id="config-base-alcohol" step="0.10" min="0" style="width: 100%; padding: 8px; margin-top: 5px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 4px;">
+      </label>
+
+      <label style="display: block; margin-bottom: 10px; margin-top: 20px;">
+        <strong>Prijsstijging per Verkoop (%)</strong>
+        <input type="number" id="config-price-increment" step="0.1" min="0" max="5" style="width: 100%; padding: 8px; margin-top: 5px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 4px;">
+        <small style="color: #999; display: block; margin-top: 5px;">Hoe veel prijzen stijgen na verkoop</small>
+      </label>
+
+      <label style="display: block; margin-bottom: 10px;">
+        <strong>Prijssprong Bedrag (€)</strong>
+        <input type="number" id="config-price-jump-size" step="0.10" min="0.10" max="2.00" style="width: 100%; padding: 8px; margin-top: 5px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 4px;">
+        <small style="color: #999; display: block; margin-top: 5px;">Alleen stappen van 10 cent of meer (0.10, 0.20, ...)</small>
+      </label>
+
+      <label style="display: block; margin-bottom: 10px;">
+        <strong>Maximale Prijs Multiplier (x)</strong>
+        <input type="number" id="config-max-multiplier" step="0.10" min="1" style="width: 100%; padding: 8px; margin-top: 5px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 4px;">
+        <small style="color: #999; display: block; margin-top: 5px;">bijv. 1.50 = max 50% boven standaard</small>
+      </label>
+
+      <label style="display: block; margin-bottom: 10px;">
+        <strong>Minimale Prijs Multiplier (x)</strong>
+        <input type="number" id="config-min-multiplier" step="0.10" min="0" max="1" style="width: 100%; padding: 8px; margin-top: 5px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 4px;">
+        <small style="color: #999; display: block; margin-top: 5px;">bijv. 0.50 = min 50% onder standaard</small>
+      </label>
+
+      <label style="display: block; margin-bottom: 20px;">
+        <strong>Decay Interval (ms)</strong>
+        <input type="number" id="config-decay-interval" step="1000" min="1000" style="width: 100%; padding: 8px; margin-top: 5px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 4px;">
+        <small style="color: #999; display: block; margin-top: 5px;">Hoe vaak prijzen aangepast worden</small>
+      </label>
+
+          <button onclick="saveConfigPanel()" class="config-btn save">💾 Opslaan</button>
+          <button onclick="resetConfigPanel()" class="config-btn reset">🔄 Resetten</button>
+        </div>
+
+        <aside class="config-admin">
+          <h3>Admin Acties</h3>
+          <button onclick="adminResetPrices()" class="config-btn admin-neutral">🔄 Reset naar Normale Prijzen</button>
+          <button onclick="adminPriceJumpUp()" class="config-btn admin-up">⬆️ Prijssprong naar Boven</button>
+          <button onclick="adminPriceJumpDown()" class="config-btn admin-down">⬇️ Prijssprong naar Beneden</button>
+        </aside>
+      </div>
+    </div>
+  </div>
+  
   <div class="tapper-layout">
     
     <div class="pos-grid">
