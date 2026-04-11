@@ -7,14 +7,10 @@ export async function onRequestPost(context) {
 
   const snapToTenth = (value) => Math.round(value * 10) / 10;
 
-  const getCategory = (drinkName) => {
-    const nonAlcoholic = new Set(["water", "frisdrank"]);
-    return nonAlcoholic.has(drinkName) ? "non-alcoholic" : "alcoholic";
-  };
-
   const body = await context.request.json();
   const SECRET_PIN = "5555"; 
-  if (body.pin !== SECRET_PIN) {
+  const submittedPin = String(body.pin ?? "").trim();
+  if (submittedPin !== SECRET_PIN) {
     return new Response(JSON.stringify({ error: "Foute PIN!" }), { status: 403 });
   }
 
@@ -45,7 +41,7 @@ export async function onRequestPost(context) {
     return new Response(JSON.stringify({ error: "Onbekende drank" }), { status: 400 });
   }
 
-  // Elke verkochte eenheid: gekozen drank omhoog + een andere drank in dezelfde categorie omlaag.
+  // Elke verkochte eenheid: gekozen drank omhoog + een willekeurige andere drank omlaag.
   for (let i = 0; i < quantity; i++) {
     const selectedDrink = data.prices[body.drink];
     const selectedBase = selectedDrink.base;
@@ -55,10 +51,7 @@ export async function onRequestPost(context) {
     if (selectedDrink.price > selectedMax) selectedDrink.price = selectedMax;
     selectedDrink.price = snapToTenth(selectedDrink.price);
 
-    const selectedCategory = getCategory(body.drink);
-    const candidates = drinkNames.filter(
-      (name) => name !== body.drink && getCategory(name) === selectedCategory
-    );
+    const candidates = drinkNames.filter((name) => name !== body.drink);
 
     if (candidates.length > 0) {
       const randomIndex = Math.floor(Math.random() * candidates.length);
@@ -72,6 +65,12 @@ export async function onRequestPost(context) {
       affectedDrink.price = snapToTenth(affectedDrink.price);
     }
   }
+    const selected = data.prices[body.drink];
+
+    if (typeof selected.stock !== "number") {
+      selected.stock = 100;
+    }
+    selected.stock = Math.max(0, selected.stock - quantity);
 
   data.lastUpdate = Date.now();
   await context.env.BAR_KV.put("market_v3", JSON.stringify(data));

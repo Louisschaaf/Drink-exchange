@@ -1,6 +1,7 @@
 let selectedDrink = "";
 let currentQuantity = 1;
 let myPin = ""; // Hier slaan we de PIN op
+let cart = {};
 
 // Config instellingen
 let config = {
@@ -23,7 +24,7 @@ function normalizeJumpSize(value) {
 
 // Login Functie
 function loginTapper() {
-  myPin = document.getElementById('pin-input').value;
+  myPin = document.getElementById('pin-input').value.trim();
   if(myPin === "") return alert("Vul een PIN in!");
   
   // Verberg het login scherm
@@ -51,31 +52,182 @@ function changeQuantity(amount) {
 }
 
 async function confirmOrder() {
-  closeModal();
-  
-  // Stuur de bestelling + de PIN naar de backend
-  const response = await fetch("/api/order", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ 
-      drink: selectedDrink, 
-      quantity: currentQuantity,
-      pin: myPin // De beveiliging!
-    })
-  });
+  if (!selectedDrink) return;
 
-  // Als de PIN fout is, zal de backend een fout geven
-  if (!response.ok) {
-    alert("Fout bij bestelling! Is je PIN code juist?");
-    document.getElementById('login-screen').style.display = 'flex'; // Toon login opnieuw
-  } else {
-    console.log(`Verkocht: ${currentQuantity}x ${selectedDrink}`);
+  cart[selectedDrink] = (cart[selectedDrink] || 0) + currentQuantity;
+  renderCart();
+  closeModal();
+}
+
+function calculateCartTotal() {
+  let total = 0;
+  for (const drink in cart) {
+    const qty = cart[drink];
+    const price = currentPrices[drink]?.price || 0;
+    total += qty * price;
   }
+  return total;
+}
+
+function renderCart() {
+  const cartList = document.getElementById('cart-list');
+  const cartTotal = document.getElementById('cart-total');
+  const checkoutBtn = document.getElementById('cart-checkout-btn');
+  const entries = Object.entries(cart).filter(([, qty]) => qty > 0);
+
+  if (entries.length === 0) {
+    cartList.innerText = "Nog niets toegevoegd";
+    cartTotal.innerText = "Totaal: €0.00";
+    checkoutBtn.disabled = true;
+    checkoutBtn.style.opacity = "0.5";
+    return;
+  }
+
+  let html = "";
+  for (const [drink, qty] of entries) {
+    const price = currentPrices[drink]?.price || 0;
+    const lineTotal = qty * price;
+    html += `
+      <div style="display:flex; justify-content:space-between; border-bottom:1px solid #333; padding:6px 0; gap:10px;">
+        <span style="text-transform: capitalize;">${qty}x ${drink}</span>
+        <strong>€${lineTotal.toFixed(2)}</strong>
+      </div>
+    `;
+  }
+
+  cartList.innerHTML = html;
+  cartTotal.innerText = `Totaal: €${calculateCartTotal().toFixed(2)}`;
+  checkoutBtn.disabled = false;
+  checkoutBtn.style.opacity = "1";
+}
+
+function clearCart() {
+  cart = {};
+  renderCart();
+}
+
+async function checkoutCart() {
+  if (!myPin) {
+    alert("Vul eerst je PIN in!");
+    return;
+  }
+
+  const entries = Object.entries(cart).filter(([, qty]) => qty > 0);
+  if (entries.length === 0) {
+    alert("Bestelling is leeg");
+    return;
+  }
+
+  for (const [drink, quantity] of entries) {
+    const response = await fetch("/api/order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        drink,
+        quantity,
+        pin: String(myPin).trim()
+      })
+    });
+
+    if (!response.ok) {
+      alert("Fout bij bestelling! Is je PIN code juist?");
+      document.getElementById('login-screen').style.display = 'flex';
+      return;
+    }
+  }
+
+  clearCart();
+  fetchLivePrices();
 }
 
 // --- NIEUWE LOGICA VOOR DE LIVE PRIJZEN ---
 
 let currentPrices = {};
+const drinkOrder = ["water", "frisdrank", "pintje", "kriek", "kriek 0.0", "stella 0.0", "witte wijn", "kasteelbier rouge", "duvel", "trippel karmeliet"];
+
+function ensureVisibilityConfig() {
+  if (!config.visibleDrinks || typeof config.visibleDrinks !== "object") {
+    config.visibleDrinks = {};
+  }
+
+  for (const drink of drinkOrder) {
+    if (typeof config.visibleDrinks[drink] !== "boolean") {
+      config.visibleDrinks[drink] = true;
+    }
+  }
+}
+
+function applyDrinkButtonVisibility() {
+  for (const drink of drinkOrder) {
+    const button = document.querySelector(`.pos-btn[data-drink="${drink}"]`);
+    if (!button) continue;
+    button.style.display = config.visibleDrinks[drink] === false ? 'none' : '';
+  }
+}
+
+function renderVisibilityControls() {
+  const controls = document.getElementById('config-visibility-controls');
+  if (!controls) return;
+
+  ensureVisibilityConfig();
+  controls.innerHTML = "";
+
+  for (const drink of drinkOrder) {
+    const safeId = drink.replace(/\s+/g, '-');
+    const row = document.createElement('label');
+    row.setAttribute('for', `visibility-${safeId}`);
+    row.innerHTML = `
+      <input id="visibility-${safeId}" type="checkbox" ${config.visibleDrinks[drink] ? "checked" : ""}>
+      <span>${drink}</span>
+    `;
+    controls.appendChild(row);
+
+    const input = row.querySelector('input');
+    input.addEventListener('change', () => {
+      config.visibleDrinks[drink] = input.checked;
+      if (!input.checked && cart[drink]) {
+        delete cart[drink];
+        renderCart();
+      }
+      applyDrinkButtonVisibility();
+      saveVisibilityConfig();
+    });
+  }
+}
+
+async function saveVisibilityConfig() {
+  try {
+    const response = await fetch("/api/config", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ config, pin: String(myPin).trim() })
+    });
+
+    if (!response.ok) {
+      console.warn("Kon zichtbaarheid niet opslaan");
+    }
+  } catch (err) {
+    console.error("Fout bij opslaan zichtbaarheid:", err);
+  }
+}
+
+function renderLivePriceList() {
+  let listHTML = "";
+  for (const drink in currentPrices) {
+    if (config.visibleDrinks && config.visibleDrinks[drink] === false) continue;
+    const price = currentPrices[drink].price;
+
+    listHTML += `
+      <div style="border-bottom: 1px solid #333; padding: 10px 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+          <span style="text-transform: capitalize;">${drink}</span>
+          <strong style="color: #00C851;">€${price.toFixed(2)}</strong>
+        </div>
+      </div>
+    `;
+  }
+  document.getElementById('live-price-list').innerHTML = listHTML;
+}
 
 // Haal de prijzen elke 3 seconden op
 async function fetchLivePrices() {
@@ -83,18 +235,19 @@ async function fetchLivePrices() {
     const res = await fetch("/api/prices");
     const data = await res.json();
     currentPrices = data.prices; // Update onze globale prijzen
-    
-    // Bouw de HTML voor de zijbalk
-    let listHTML = "";
-    for (const drink in currentPrices) {
-      listHTML += `
-        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 10px 0;">
-          <span style="text-transform: capitalize;">${drink}</span>
-          <strong style="color: #00C851;">€${currentPrices[drink].price.toFixed(2)}</strong>
-        </div>
-      `;
-    }
-    document.getElementById('live-price-list').innerHTML = listHTML;
+    config = {
+      ...config,
+      ...(data.config || {}),
+      visibleDrinks: {
+        ...(data.config?.visibleDrinks || {}),
+        ...(config.visibleDrinks || {})
+      }
+    };
+    ensureVisibilityConfig();
+    renderVisibilityControls();
+    applyDrinkButtonVisibility();
+    renderLivePriceList();
+    renderCart();
 
     // Update ook de totaalprijs als de pop-up open staat
     updateModalTotal();
@@ -121,6 +274,7 @@ changeQuantity = function(amount) {
 // Start de loop voor de prijzen
 fetchLivePrices();
 setInterval(fetchLivePrices, 3000);
+renderCart();
 
 // Load config on page load
 loadConfigPanel();
@@ -151,7 +305,15 @@ async function loadConfigPanel() {
     const data = await res.json();
     
     if (data.config) {
-      config = data.config;
+      config = {
+        ...config,
+        ...data.config,
+        visibleDrinks: {
+          ...(data.config.visibleDrinks || {}),
+          ...(config.visibleDrinks || {})
+        }
+      };
+      ensureVisibilityConfig();
       
       // Vul de formulier in
       document.getElementById('config-base-water').value = config.basePrice?.water || 2.00;
@@ -161,6 +323,8 @@ async function loadConfigPanel() {
       document.getElementById('config-max-multiplier').value = config.maxMultiplier || 1.50;
       document.getElementById('config-min-multiplier').value = config.minMultiplier || 0.50;
       document.getElementById('config-decay-interval').value = config.decayInterval || 5000;
+      renderVisibilityControls();
+      applyDrinkButtonVisibility();
     }
   } catch (err) {
     console.error("Fout bij laden config:", err);
@@ -176,6 +340,13 @@ function populateDefaultConfig() {
   document.getElementById('config-max-multiplier').value = 1.50;
   document.getElementById('config-min-multiplier').value = 0.50;
   document.getElementById('config-decay-interval').value = 5000;
+  config.visibleDrinks = {};
+  for (const drink of drinkOrder) {
+    config.visibleDrinks[drink] = true;
+  }
+  ensureVisibilityConfig();
+  renderVisibilityControls();
+  applyDrinkButtonVisibility();
 }
 
 async function saveConfigPanel() {
@@ -204,7 +375,8 @@ async function saveConfigPanel() {
     priceJumpSize: priceJumpSize,
     maxMultiplier: maxMultiplier,
     minMultiplier: minMultiplier,
-    decayInterval: decayInterval
+    decayInterval: decayInterval,
+    visibleDrinks: config.visibleDrinks
   };
 
   try {

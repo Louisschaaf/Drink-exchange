@@ -65,6 +65,11 @@
         <small style="color: #999; display: block; margin-top: 5px;">Hoe vaak prijzen aangepast worden</small>
       </label>
 
+          <div style="margin: 18px 0 10px 0; padding-top: 16px; border-top: 1px solid #333;">
+            <strong style="display: block; margin-bottom: 10px;">Zichtbaarheid Customer View</strong>
+            <div id="config-visibility-controls" class="customer-controls-grid"></div>
+          </div>
+
           <button onclick="saveConfigPanel()" class="config-btn save">💾 Opslaan</button>
           <button onclick="resetConfigPanel()" class="config-btn reset">🔄 Resetten</button>
         </div>
@@ -82,14 +87,16 @@
   <div class="tapper-layout">
     
     <div class="pos-grid">
-      <button class="pos-btn" onclick="openModal('water', '💧')">💧<br>Water</button>
-      <button class="pos-btn" onclick="openModal('frisdrank', '🥤')">🥤<br>Frisdrank</button>
-      <button class="pos-btn" onclick="openModal('pintje', '🍺')">🍺<br>Pintje</button>
-      <button class="pos-btn" onclick="openModal('kriek', '🍒')">🍒<br>Kriek</button>
-      <button class="pos-btn" onclick="openModal('witte wijn', '🥂')">🥂<br>Witte Wijn</button>
-      <button class="pos-btn" onclick="openModal('kasteelbier rouge', '🍷')">🍷<br>Kasteelbier</button>
-      <button class="pos-btn" onclick="openModal('duvel', '🍻')">🍻<br>Duvel</button>
-      <button class="pos-btn" onclick="openModal('trippel karmeliet', '🏺')">🏺<br>Karmeliet</button>
+      <button class="pos-btn" data-drink="water" onclick="openModal('water', '💧')">💧<br>Water</button>
+      <button class="pos-btn" data-drink="frisdrank" onclick="openModal('frisdrank', '🥤')">🥤<br>Frisdrank</button>
+      <button class="pos-btn" data-drink="pintje" onclick="openModal('pintje', '🍺')">🍺<br>Pintje</button>
+      <button class="pos-btn" data-drink="kriek" onclick="openModal('kriek', '🍒')">🍒<br>Kriek</button>
+      <button class="pos-btn" data-drink="kriek 0.0" onclick="openModal('kriek 0.0', '🍒')">🍒<br>Kriek 0.0</button>
+      <button class="pos-btn" data-drink="stella 0.0" onclick="openModal('stella 0.0', '🍺')">🍺<br>Stella 0.0</button>
+      <button class="pos-btn" data-drink="witte wijn" onclick="openModal('witte wijn', '🥂')">🥂<br>Witte Wijn</button>
+      <button class="pos-btn" data-drink="kasteelbier rouge" onclick="openModal('kasteelbier rouge', '🍷')">🍷<br>Kasteelbier</button>
+      <button class="pos-btn" data-drink="duvel" onclick="openModal('duvel', '🍻')">🍻<br>Duvel</button>
+      <button class="pos-btn" data-drink="trippel karmeliet" onclick="openModal('trippel karmeliet', '🏺')">🏺<br>Karmeliet</button>
     </div>
 
     <div class="price-sidebar">
@@ -97,6 +104,12 @@
       <div id="live-price-list">
         Laden...
       </div>
+
+      <h2 style="margin-top: 20px;">Bestelling</h2>
+      <div id="cart-list" style="min-height: 60px; color: #bbb; text-align: left;">Nog niets toegevoegd</div>
+      <h3 id="cart-total" style="color: #00C851; margin: 12px 0;">Totaal: €0.00</h3>
+      <button id="cart-checkout-btn" onclick="checkoutCart()" style="width: 100%; background-color: #00C851;">Afrekenen Alles</button>
+      <button onclick="clearCart()" style="width: 100%; background-color: #555;">Wis Bestelling</button>
     </div>
 
   </div>
@@ -111,7 +124,7 @@
       </div>
       <br>
       <h3 id="modal-total" style="color: #00C851; margin: 15px 0;">Totaal: €0.00</h3>
-      <button onclick="confirmOrder()" style="background-color: #00C851; padding: 20px 40px; font-size: 1.5em; width: 100%;">Afrekenen</button>
+      <button onclick="confirmOrder()" style="background-color: #00C851; padding: 20px 40px; font-size: 1.5em; width: 100%;">Toevoegen</button>
       <button onclick="closeModal()" style="background-color: #ff4444; width: 100%; margin-top: 10px;">Annuleer</button>
     </div>
   </div>

@@ -13,6 +13,21 @@ h1 {
   margin-bottom: 40px;
 }
 
+.customer-controls-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px 12px;
+}
+
+.customer-controls-grid label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ddd;
+  font-size: 0.9rem;
+  text-transform: capitalize;
+}
+
 /* The Grid Layout */
 .grid-container {
   display: grid;

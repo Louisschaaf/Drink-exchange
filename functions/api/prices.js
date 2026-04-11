@@ -19,34 +19,66 @@ export async function onRequestGet(context) {
     priceJumpSize: 0.10,
     maxMultiplier: 1.50,
     minMultiplier: 0.50,
-    decayInterval: 5000
+    decayInterval: 5000,
+    visibleDrinks: {
+      "water": true,
+      "frisdrank": true,
+      "pintje": true,
+      "kriek": true,
+      "kriek 0.0": true,
+      "witte wijn": true,
+      "kasteelbier rouge": true,
+      "duvel": true,
+      "trippel karmeliet": true,
+      "stella 0.0": true
+    }
   };
 
   const defaultDrinks = {
-    "water": { price: 2.00, base: 2.00 },
-    "frisdrank": { price: 2.00, base: 2.00 },
-    "pintje": { price: 2.00, base: 2.00 },
-    "kriek": { price: 2.00, base: 2.00 },
-    "witte wijn": { price: 4.00, base: 4.00 },
-    "kasteelbier rouge": { price: 4.00, base: 4.00 },
-    "duvel": { price: 4.00, base: 4.00 },
-    "trippel karmeliet": { price: 4.00, base: 4.00 }
+    "water": { price: 2.00, base: 2.00, stock: 100 },
+    "frisdrank": { price: 2.00, base: 2.00, stock: 100 },
+    "pintje": { price: 2.00, base: 2.00, stock: 100 },
+    "kriek": { price: 2.00, base: 2.00, stock: 100 },
+    "kriek 0.0": { price: 2.00, base: 2.00, stock: 100 },
+    "witte wijn": { price: 4.00, base: 4.00, stock: 100 },
+    "kasteelbier rouge": { price: 4.00, base: 4.00, stock: 100 },
+    "duvel": { price: 4.00, base: 4.00, stock: 100 },
+    "trippel karmeliet": { price: 4.00, base: 4.00, stock: 100 },
+    "stella 0.0": { price: 2.00, base: 2.00, stock: 100 }
   };
+
+  let migratedLegacyBases = false;
 
   // Initialiseer als de database leeg is
   if (!data.prices) {
     data = { prices: defaultDrinks, lastUpdate: Date.now(), drinksSold: 0, config: defaultConfig };
     await context.env.BAR_KV.put("market_v3", JSON.stringify(data));
+  } else {
+    for (const drink in defaultDrinks) {
+      if (!data.prices[drink]) {
+        data.prices[drink] = structuredClone(defaultDrinks[drink]);
+        migratedLegacyBases = true;
+      }
+    }
   }
   
   // Zorg ervoor dat config bestaat
   if (!data.config) {
     data.config = defaultConfig;
+  } else {
+    if (!data.config.visibleDrinks || typeof data.config.visibleDrinks !== "object") {
+      data.config.visibleDrinks = defaultConfig.visibleDrinks;
+    }
+
+    for (const drink of Object.keys(defaultConfig.visibleDrinks)) {
+      if (typeof data.config.visibleDrinks[drink] !== "boolean") {
+        data.config.visibleDrinks[drink] = true;
+      }
+    }
   }
 
   // Houd pintje en kriek in de standaard prijsgroep (zelfde base als water/frisdrank).
-  let migratedLegacyBases = false;
-  for (const drink of ["water", "frisdrank", "pintje", "kriek"]) {
+  for (const drink of ["water", "frisdrank", "pintje", "kriek", "kriek 0.0", "stella 0.0"]) {
     if (data.prices[drink]) {
       const standardBase = data.config.basePrice.water;
       if (data.prices[drink].base !== standardBase) {
@@ -57,6 +89,17 @@ export async function onRequestGet(context) {
         }
         migratedLegacyBases = true;
       }
+      if (typeof data.prices[drink].stock !== "number") {
+        data.prices[drink].stock = 100;
+        migratedLegacyBases = true;
+      }
+    }
+  }
+
+  for (const drink in data.prices) {
+    if (typeof data.prices[drink].stock !== "number") {
+      data.prices[drink].stock = 100;
+      migratedLegacyBases = true;
     }
   }
 
@@ -82,38 +125,31 @@ export async function onRequestGet(context) {
     const ticks = Math.floor(timeDiff / DECAY_INTERVAL);
     let changed = false;
 
-    for (const drink in data.prices) {
-      let item = data.prices[drink];
-      for (let i = 0; i < Math.min(ticks, 50); i++) {
-        const oldPrice = item.price;
-        const atBase = Math.abs(item.price - item.base) < 0.001;
+    const drinkNames = Object.keys(data.prices);
 
-        // Random timing: niet elke tick beweegt de prijs.
-        if (atBase) {
-          // Op de basisprijs: kleine kans op een willekeurige sprong.
-          if (Math.random() < 0.12) {
-            item.price += Math.random() < 0.5 ? -PRICE_JUMP_SIZE : PRICE_JUMP_SIZE;
-          }
-        } else {
-          // Weg van basisprijs: meestal 1 vaste stap terug naar de basis.
-          if (Math.random() < 0.65) {
-            if (item.price > item.base) item.price -= PRICE_JUMP_SIZE;
-            else item.price += PRICE_JUMP_SIZE;
-          }
-        }
+    for (let i = 0; i < Math.min(ticks, 50); i++) {
+      const candidates = drinkNames.filter((drink) => {
+        const item = data.prices[drink];
+        const minPrice = item.base * MIN_MULTIPLIER;
+        return item.price > minPrice + 0.0001;
+      });
 
-        item.price = snapToTenth(item.price);
-        if (item.price !== oldPrice) changed = true;
-      }
-      
-      const maxPrice = item.base * MAX_MULTIPLIER;
+      if (candidates.length === 0) break;
+
+      const targetName = candidates[Math.floor(Math.random() * candidates.length)];
+      const item = data.prices[targetName];
+      const oldPrice = item.price;
       const minPrice = item.base * MIN_MULTIPLIER;
-      if (item.price > maxPrice) item.price = maxPrice;
+
+      // Per verlopen tick zakt precies één willekeurige drank een stap.
+      item.price -= PRICE_JUMP_SIZE;
       if (item.price < minPrice) item.price = minPrice;
       item.price = snapToTenth(item.price);
+
+      if (item.price !== oldPrice) changed = true;
     }
 
-    if (changed) {
+    if (changed || ticks > 0) {
       data.lastUpdate = now;
       await context.env.BAR_KV.put("market_v3", JSON.stringify(data));
     }

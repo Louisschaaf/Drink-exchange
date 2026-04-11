@@ -1,23 +1,44 @@
+const defaultConfig = {
+  basePrice: {
+    water: 2.00,
+    alcohol: 4.00
+  },
+  priceIncrement: 0.014,
+  priceJumpSize: 0.10,
+  maxMultiplier: 1.50,
+  minMultiplier: 0.50,
+  decayInterval: 5000,
+  visibleDrinks: {
+    "water": true,
+    "frisdrank": true,
+    "pintje": true,
+    "kriek": true,
+    "kriek 0.0": true,
+    "witte wijn": true,
+    "kasteelbier rouge": true,
+    "duvel": true,
+    "trippel karmeliet": true,
+    "stella 0.0": true
+  }
+};
+
 export async function onRequestGet(context) {
   try {
     let data = JSON.parse(await context.env.BAR_KV.get("market_v3") || "{}");
 
-    // Default config
-    const defaultConfig = {
-      basePrice: {
-        water: 2.00,
-        alcohol: 4.00
-      },
-      priceIncrement: 0.014,
-      priceJumpSize: 0.10,
-      maxMultiplier: 1.50,
-      minMultiplier: 0.50,
-      decayInterval: 5000
-    };
-
     // Haal config of gebruik defaults
     if (!data.config) {
-      data.config = defaultConfig;
+      data.config = structuredClone(defaultConfig);
+    } else {
+      if (!data.config.visibleDrinks || typeof data.config.visibleDrinks !== "object") {
+        data.config.visibleDrinks = structuredClone(defaultConfig.visibleDrinks);
+      }
+
+      for (const drink of Object.keys(defaultConfig.visibleDrinks)) {
+        if (typeof data.config.visibleDrinks[drink] !== "boolean") {
+          data.config.visibleDrinks[drink] = true;
+        }
+      }
     }
 
     return new Response(JSON.stringify({ config: data.config }), {
@@ -64,25 +85,30 @@ export async function onRequestPost(context) {
     // Sla de nieuwe config op
     data.config = body.config;
     data.config.priceJumpSize = normalizeJumpSize(body?.config?.priceJumpSize);
+    if (!data.config.visibleDrinks || typeof data.config.visibleDrinks !== "object") {
+      data.config.visibleDrinks = structuredClone(defaultConfig.visibleDrinks);
+    }
+
+    for (const drink of Object.keys(defaultConfig.visibleDrinks)) {
+      if (typeof data.config.visibleDrinks[drink] !== "boolean") {
+        data.config.visibleDrinks[drink] = true;
+      }
+    }
 
     // Update ook de base prices in de drink prijzen
     if (body.config.basePrice) {
-      const standardDrinks = ["water", "frisdrank", "pintje", "kriek"];
+      const standardDrinks = ["water", "frisdrank", "pintje", "kriek", "kriek 0.0", "stella 0.0"];
       const premiumDrinks = ["witte wijn", "kasteelbier rouge", "duvel", "trippel karmeliet"];
 
       for (const drink of standardDrinks) {
         if (data.prices[drink]) {
           data.prices[drink].base = body.config.basePrice.water;
-          // Reset prijs naar base
-          data.prices[drink].price = body.config.basePrice.water;
         }
       }
 
       for (const drink of premiumDrinks) {
         if (data.prices[drink]) {
           data.prices[drink].base = body.config.basePrice.alcohol;
-          // Reset prijs naar base
-          data.prices[drink].price = body.config.basePrice.alcohol;
         }
       }
     }
