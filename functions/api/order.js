@@ -7,9 +7,9 @@ export async function onRequestPost(context) {
 
   const snapToTenth = (value) => Math.round(value * 10) / 10;
 
-  const getDrinkCategory = (drinkName) => {
-    const standard = new Set(["water", "frisdrank", "pintje", "kriek"]);
-    return standard.has(drinkName) ? "standard" : "premium";
+  const getCategory = (drinkName) => {
+    const nonAlcoholic = new Set(["water", "frisdrank"]);
+    return nonAlcoholic.has(drinkName) ? "non-alcoholic" : "alcoholic";
   };
 
   const body = await context.request.json();
@@ -35,59 +35,41 @@ export async function onRequestPost(context) {
   const quantity = body.quantity || 1; 
   data.drinksSold += quantity; // Tel de drankjes op!
 
-  const CRASH_LIMIT = 50; // Na hoeveel drankjes crasht de boel?
   const priceJumpSize = normalizeJumpSize(data.config.priceJumpSize);
   data.config.priceJumpSize = priceJumpSize;
   const maxMultiplier = data.config.maxMultiplier || 1.50;
   const minMultiplier = data.config.minMultiplier || 0.50;
+  const drinkNames = Object.keys(data.prices);
 
   if (!data.prices[body.drink]) {
     return new Response(JSON.stringify({ error: "Onbekende drank" }), { status: 400 });
   }
 
-  const selectedCategory = getDrinkCategory(body.drink);
+  // Elke verkochte eenheid: gekozen drank omhoog + een andere drank in dezelfde categorie omlaag.
+  for (let i = 0; i < quantity; i++) {
+    const selectedDrink = data.prices[body.drink];
+    const selectedBase = selectedDrink.base;
+    const selectedMax = selectedBase * maxMultiplier;
 
-  if (data.drinksSold >= CRASH_LIMIT) {
-    // 🔥 BEURSCRASH 🔥
-    for (const drinkName in data.prices) {
-      const basePrice = data.prices[drinkName].base;
-      data.prices[drinkName].price = basePrice * 0.50; // Alles naar de absolute bodemprijs!
-    }
-    data.drinksSold = 0; // Reset de teller voor de volgende crash
-  } else {
-    // Realistischer beursgedrag: gekozen drank stijgt, andere dranken bewegen soms en random.
-    for (let i = 0; i < quantity; i++) {
-      const selected = data.prices[body.drink];
-      const basePrice = selected.base;
-      const maxPrice = basePrice * maxMultiplier;
-      const minPrice = basePrice * minMultiplier;
+    selectedDrink.price += priceJumpSize;
+    if (selectedDrink.price > selectedMax) selectedDrink.price = selectedMax;
+    selectedDrink.price = snapToTenth(selectedDrink.price);
 
-      selected.price += priceJumpSize;
-      if (selected.price > maxPrice) selected.price = maxPrice;
-      if (selected.price < minPrice) selected.price = minPrice;
-      selected.price = snapToTenth(selected.price);
+    const selectedCategory = getCategory(body.drink);
+    const candidates = drinkNames.filter(
+      (name) => name !== body.drink && getCategory(name) === selectedCategory
+    );
 
-      for (const drinkName in data.prices) {
-        if (drinkName === body.drink) continue;
+    if (candidates.length > 0) {
+      const randomIndex = Math.floor(Math.random() * candidates.length);
+      const affectedName = candidates[randomIndex];
+      const affectedDrink = data.prices[affectedName];
+      const affectedBase = affectedDrink.base;
+      const affectedMin = affectedBase * minMultiplier;
 
-        const other = data.prices[drinkName];
-        const otherBase = other.base;
-        const otherMax = otherBase * maxMultiplier;
-        const otherMin = otherBase * minMultiplier;
-        const sameCategory = getDrinkCategory(drinkName) === selectedCategory;
-
-        // Zelfde categorie beweegt wat vaker mee dan andere categorieen.
-        const moveChance = sameCategory ? 0.35 : 0.12;
-        if (Math.random() >= moveChance) continue;
-
-        const upwardChance = sameCategory ? 0.45 : 0.50;
-        const delta = Math.random() < upwardChance ? priceJumpSize : -priceJumpSize;
-
-        other.price += delta;
-        if (other.price > otherMax) other.price = otherMax;
-        if (other.price < otherMin) other.price = otherMin;
-        other.price = snapToTenth(other.price);
-      }
+      affectedDrink.price -= priceJumpSize;
+      if (affectedDrink.price < affectedMin) affectedDrink.price = affectedMin;
+      affectedDrink.price = snapToTenth(affectedDrink.price);
     }
   }
 
