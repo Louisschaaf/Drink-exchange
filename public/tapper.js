@@ -221,7 +221,7 @@ function renderLivePriceList() {
       <div style="border-bottom: 1px solid #333; padding: 10px 0;">
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
           <span style="text-transform: capitalize;">${drink}</span>
-          <strong style="color: #00C851;">€${price.toFixed(2)}</strong>
+          <strong style="color: #ffffff;">€${price.toFixed(2)}</strong>
         </div>
       </div>
     `;

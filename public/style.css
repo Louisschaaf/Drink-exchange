@@ -62,8 +62,8 @@ h1 {
 }
 
 /* Dynamic Price Colors */
-.price-up { color: #00C851; }   /* Green */
-.price-down { color: #ff4444; } /* Red */
+.price-up { color: #ffffff; }
+.price-down { color: #ffffff; }
 .price-flat { color: #ffffff; } /* White */
 
 button {
